@@ -264,8 +264,12 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
       h_off = Rand() % (height - crop_size);
       w_off = Rand() % (width - crop_size);
     } else {
-      h_off = (height - crop_size) / 2;
+        h_off = Rand() % (height - crop_size);
+        w_off = Rand() % (width - crop_size);
+/*      h_off = (height - crop_size) / 2;
       w_off = (width - crop_size) / 2;
+      h_off = 0;
+      w_off = 0;*/
     }
     if (mirror && Rand() % 2) {
       // Copy mirrored version
@@ -279,10 +283,12 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
                 static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
             transformed_data[top_index] =
                 (datum_element - mean[data_index] + offset) * scale;
+                // transformed_data[top_index] = (datum_element - 128 + offset) * scale;
           }
         }
       }
     } else {
+    	//LOG(INFO) << "test offset: " << offset << " scale: " << scale;
       // Normal copy
       for (int c = 0; c < channels; ++c) {
         for (int h = 0; h < crop_size; ++h) {
@@ -290,10 +296,9 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
             int top_index = ((batch_item_id * channels + c) * crop_size + h)
                 * crop_size + w;
             int data_index = (c * height + h + h_off) * width + w + w_off;
-            Dtype datum_element =
-                static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
-            transformed_data[top_index] =
-                (datum_element - mean[data_index] + offset) * scale;
+            Dtype datum_element = static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
+			transformed_data[top_index] =
+						(datum_element - mean[data_index] + offset) * scale;
           }
         }
       }
@@ -318,8 +323,7 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
 
 template <typename Dtype>
 void DataTransformer<Dtype>::InitRand() {
-  const bool needs_rand = (phase_ == Caffe::TRAIN) &&
-      (param_.mirror() || param_.crop_size());
+  const bool needs_rand =  (param_.mirror() || param_.crop_size());
   if (needs_rand) {
     const unsigned int rng_seed = caffe_rng_rand();
     rng_.reset(new Caffe::RNG(rng_seed));
@@ -331,8 +335,7 @@ void DataTransformer<Dtype>::InitRand() {
 template <typename Dtype>
 unsigned int DataTransformer<Dtype>::Rand() {
   CHECK(rng_);
-  caffe::rng_t* rng =
-      static_cast<caffe::rng_t*>(rng_->generator());
+  caffe::rng_t* rng = static_cast<caffe::rng_t*>(rng_->generator());
   return (*rng)();
 }
 

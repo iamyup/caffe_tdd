@@ -44,6 +44,9 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   } else {
     // Simply initialize an all-empty mean.
     data_mean_.Reshape(1, datum_channels_, datum_height_, datum_width_);
+    Dtype* mean_prt = data_mean_.mutable_cpu_data();
+    for (int i = 0; i < datum_channels_*datum_height_*datum_width_; i++)
+    	mean_prt[i] = 128;
   }
   mean_ = data_mean_.cpu_data();
   data_transformer_.InitRand();

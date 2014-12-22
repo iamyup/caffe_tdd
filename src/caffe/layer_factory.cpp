@@ -181,16 +181,12 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
   switch (type) {
   case LayerParameter_LayerType_ACCURACY:
     return new AccuracyLayer<Dtype>(param);
-  case LayerParameter_LayerType_TRANSFORM_ACCURACY:
-    return new TransformAccuracyLayer<Dtype>(param);
   case LayerParameter_LayerType_ABSVAL:
     return new AbsValLayer<Dtype>(param);
   case LayerParameter_LayerType_ARGMAX:
     return new ArgMaxLayer<Dtype>(param);
   case LayerParameter_LayerType_BNLL:
     return new BNLLLayer<Dtype>(param);
-  case LayerParameter_LayerType_COMPACT_DATA:
-    return new CompactDataLayer<Dtype>(param);
   case LayerParameter_LayerType_CONCAT:
     return new ConcatLayer<Dtype>(param);
   case LayerParameter_LayerType_CONTRASTIVE_LOSS:
@@ -217,24 +213,20 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new HingeLossLayer<Dtype>(param);
   case LayerParameter_LayerType_IMAGE_DATA:
     return new ImageDataLayer<Dtype>(param);
+  case LayerParameter_LayerType_VIDEO_DATA:
+    return new VideoDataLayer<Dtype>(param);
   case LayerParameter_LayerType_IM2COL:
     return new Im2colLayer<Dtype>(param);
   case LayerParameter_LayerType_INFOGAIN_LOSS:
     return new InfogainLossLayer<Dtype>(param);
   case LayerParameter_LayerType_INNER_PRODUCT:
     return new InnerProductLayer<Dtype>(param);
-  case LayerParameter_LayerType_LABEL_TRANSFORM:
-    return new LabelTransformLayer<Dtype>(param);
   case LayerParameter_LayerType_LRN:
     return new LRNLayer<Dtype>(param);
   case LayerParameter_LayerType_MEMORY_DATA:
     return new MemoryDataLayer<Dtype>(param);
   case LayerParameter_LayerType_MVN:
     return new MVNLayer<Dtype>(param);
-  case LayerParameter_LayerType_MULTI_LABEL_ACCURACY:
-	return new MultiLabelAccuracyLayer<Dtype>(param);
-  case LayerParameter_LayerType_MULTI_LABEL_LOSS:
-  	return new MultiLabelLossLayer<Dtype>(param);
   case LayerParameter_LayerType_MULTINOMIAL_LOGISTIC_LOSS:
     return new MultinomialLogisticLossLayer<Dtype>(param);
   case LayerParameter_LayerType_POOLING:
@@ -261,12 +253,6 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return GetTanHLayer<Dtype>(name, param);
   case LayerParameter_LayerType_WINDOW_DATA:
     return new WindowDataLayer<Dtype>(param);
-  case LayerParameter_LayerType_MAP_REGRESSION_LOSS:
-	  return new MapRegressionLossLayer<Dtype>(param);
-  case LayerParameter_LayerType_TILED_INNERPRODUCT:
-	  return new TiledInnerProductLayer<Dtype>(param);
-  case LayerParameter_LayerType_TILED_CONVOLUTION:
-	  return new TiledConvolutionLayer<Dtype>(param);
   case LayerParameter_LayerType_NONE:
     LOG(FATAL) << "Layer " << name << " has unspecified type.";
   default:

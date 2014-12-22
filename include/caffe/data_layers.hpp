@@ -315,6 +315,30 @@ class ImageDataLayer : public BasePrefetchingDataLayer<Dtype> {
   int lines_id_;
 };
 
+template <typename Dtype>
+class VideoDataLayer : public BasePrefetchingDataLayer<Dtype>{
+public:
+	explicit VideoDataLayer(const LayerParameter& param)
+		: BasePrefetchingDataLayer<Dtype>(param){}
+	virtual ~VideoDataLayer();
+	virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top);
+	virtual inline LayerParameter_LayerType type() const {
+		return LayerParameter_LayerType_VIDEO_DATA;
+	}
+	virtual inline int ExactNumBottomBlobs() const {return 0;}
+	virtual inline int ExactNumTopBlobs() const {return 2;}
+protected:
+	shared_ptr<Caffe::RNG> prefetch_rng_2_;
+	shared_ptr<Caffe::RNG> prefetch_rng_1_;
+	shared_ptr<Caffe::RNG> frame_prefetch_rng_;
+  	virtual void ShuffleVideos();
+	virtual void InternalThreadEntry();
+
+	vector<std::pair<std::string,int> > lines_;
+	vector<int> lines_duration_;
+	int lines_id_;
+};
+
 /**
  * @brief Provides data to the Net from memory.
  *
@@ -418,3 +442,4 @@ class LabelTransformLayer : public Layer<Dtype> {
 
 }  // namespace caffe
 #endif  // CAFFE_DATA_LAYERS_HPP_
+
