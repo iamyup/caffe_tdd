@@ -339,6 +339,32 @@ protected:
 	int lines_id_;
 };
 
+template <typename Dtype>
+class SequenceDataLayer : public BasePrefetchingDataLayer<Dtype>{
+public:
+	explicit SequenceDataLayer(const LayerParameter& param)
+		: BasePrefetchingDataLayer<Dtype>(param){}
+	virtual ~SequenceDataLayer();
+	virtual void SequenceLayerSetUp(const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top);
+	virtual inline LayerParameter_LayerType type() const {
+		return LayerParameter_LayerType_SEQUENCE_DATA;
+	}
+	virtual inline int ExactNumBottomBlobs() const {return 0;}
+	virtual inline int ExactNumTopBlobs() const {
+		return this->layer_param_.video_data_param().num_segments() + 1;
+	}
+protected:
+	shared_ptr<Caffe::RNG> prefetch_rng_2_;
+	shared_ptr<Caffe::RNG> prefetch_rng_1_;
+	shared_ptr<Caffe::RNG> frame_prefetch_rng_;
+  	virtual void ShuffleSequences();
+	virtual void InternalThreadEntry();
+
+	vector<std::pair<std::string,int> > lines_;
+	vector<int> lines_duration_;
+	int lines_id_;
+};
+
 /**
  * @brief Provides data to the Net from memory.
  *

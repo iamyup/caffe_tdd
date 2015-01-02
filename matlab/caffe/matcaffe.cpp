@@ -232,8 +232,7 @@ static mxArray* do_get_weights() {
 static mxArray* do_get_feature_maps() {
 	const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
 	const vector<vector<Blob<float>*> >& top_vecs = net_->top_vecs();
-
-	  const vector<string>& layer_names = net_->layer_names();
+	const vector<string>& layer_names = net_->layer_names();
 
 	  // Step 1: count the number of layers with weights
 	  int num_layers = 0;

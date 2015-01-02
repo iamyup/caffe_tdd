@@ -215,6 +215,8 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new ImageDataLayer<Dtype>(param);
   case LayerParameter_LayerType_VIDEO_DATA:
     return new VideoDataLayer<Dtype>(param);
+  case LayerParameter_LayerType_SEQUENCE_DATA:
+	return new SequenceDataLayer<Dtype>(param);
   case LayerParameter_LayerType_IM2COL:
     return new Im2colLayer<Dtype>(param);
   case LayerParameter_LayerType_INFOGAIN_LOSS:

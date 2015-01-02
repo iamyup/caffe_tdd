@@ -29,7 +29,7 @@ void VideoDataLayer<Dtype>:: DataLayerSetUp(const vector<Blob<Dtype>*>& bottom, 
 	const int new_width  = this->layer_param_.video_data_param().new_width();
 	const int new_length  = this->layer_param_.video_data_param().new_length();
 	const string& source = this->layer_param_.video_data_param().source();
-	LOG(INFO) << "Opening file" << source;
+	LOG(INFO) << "Opening file: " << source;
 	std:: ifstream infile(source.c_str());
 	string filename;
 	int label;
@@ -45,7 +45,7 @@ void VideoDataLayer<Dtype>:: DataLayerSetUp(const vector<Blob<Dtype>*>& bottom, 
 		ShuffleVideos();
 	}
 
-	LOG(INFO) << "A total of " << lines_.size() << "videos.";
+	LOG(INFO) << "A total of " << lines_.size() << " videos.";
 	lines_id_ = 0;
 
 	Datum datum;
@@ -83,8 +83,8 @@ template <typename Dtype>
 void VideoDataLayer<Dtype>::ShuffleVideos(){
 	caffe::rng_t* prefetch_rng1 = static_cast<caffe::rng_t*>(prefetch_rng_1_->generator());
 	caffe::rng_t* prefetch_rng2 = static_cast<caffe::rng_t*>(prefetch_rng_2_->generator());
-	shuffle(lines_.begin(), lines_.end(), prefetch_rng);
-	shuffle(lines_duration_.begin(), lines_duration_.end(),prefetch_rng);
+	shuffle(lines_.begin(), lines_.end(), prefetch_rng1);
+	shuffle(lines_duration_.begin(), lines_duration_.end(),prefetch_rng2);
 }
 
 template <typename Dtype>
@@ -112,10 +112,10 @@ void VideoDataLayer<Dtype>::InternalThreadEntry(){
 		int offset = 0;
 		if (this->phase_ == Caffe::TRAIN){
 			caffe::rng_t* rng = static_cast<caffe::rng_t*>(frame_prefetch_rng_->generator());
-			int offset = (*rng)() % (lines_duration_[lines_id_]-new_length+1);
+			offset = (*rng)() % (lines_duration_[lines_id_]-new_length+1);
 		}
 		else{
-			offset = (int) (lines_duration_[lines_id_]-new_length+1)/2
+			offset = (int) (lines_duration_[lines_id_]-new_length+1)/2;
 		}
 		if(!ReadFlowToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offset, new_height, new_width, new_length, &datum)) {
 			continue;

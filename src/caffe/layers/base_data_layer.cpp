@@ -50,6 +50,7 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }
   mean_ = data_mean_.cpu_data();
   data_transformer_.InitRand();
+  LOG(INFO) << "BaseDataLayer<Dtype>::LayerSetUp";
 }
 
 template <typename Dtype>

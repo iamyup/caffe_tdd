@@ -264,12 +264,10 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
       h_off = Rand() % (height - crop_size);
       w_off = Rand() % (width - crop_size);
     } else {
-        h_off = Rand() % (height - crop_size);
-        w_off = Rand() % (width - crop_size);
-/*      h_off = (height - crop_size) / 2;
-      w_off = (width - crop_size) / 2;
-      h_off = 0;
-      w_off = 0;*/
+        h_off = (height - crop_size) / 2;
+        w_off = (width - crop_size) / 2;
+        // h_off = Rand() % (height - crop_size);
+        // w_off = Rand() % (width - crop_size);
     }
     if (mirror && Rand() % 2) {
       // Copy mirrored version
@@ -281,14 +279,17 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
                 * crop_size + (crop_size - 1 - w);
             Dtype datum_element =
                 static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
-            transformed_data[top_index] =
-                (datum_element - mean[data_index] + offset) * scale;
-                // transformed_data[top_index] = (datum_element - 128 + offset) * scale;
+            if (c % 2 == 1){
+            	transformed_data[top_index] =
+            	                (datum_element - mean[data_index] + offset) * scale;
+            } else{
+            	transformed_data[top_index] =
+            	                (255-datum_element - mean[data_index] + offset) * scale;
+            }
           }
         }
       }
     } else {
-    	//LOG(INFO) << "test offset: " << offset << " scale: " << scale;
       // Normal copy
       for (int c = 0; c < channels; ++c) {
         for (int h = 0; h < crop_size; ++h) {
