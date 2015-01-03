@@ -345,13 +345,13 @@ public:
 	explicit SequenceDataLayer(const LayerParameter& param)
 		: BasePrefetchingDataLayer<Dtype>(param){}
 	virtual ~SequenceDataLayer();
-	virtual void SequenceLayerSetUp(const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top);
+	virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top);
 	virtual inline LayerParameter_LayerType type() const {
 		return LayerParameter_LayerType_SEQUENCE_DATA;
 	}
 	virtual inline int ExactNumBottomBlobs() const {return 0;}
 	virtual inline int ExactNumTopBlobs() const {
-		return this->layer_param_.video_data_param().num_segments() + 1;
+		return this->layer_param_.sequence_data_param().num_segments() + 1;
 	}
 protected:
 	shared_ptr<Caffe::RNG> prefetch_rng_2_;

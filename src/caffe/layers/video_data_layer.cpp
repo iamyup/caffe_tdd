@@ -28,6 +28,7 @@ void VideoDataLayer<Dtype>:: DataLayerSetUp(const vector<Blob<Dtype>*>& bottom, 
 	const int new_height  = this->layer_param_.video_data_param().new_height();
 	const int new_width  = this->layer_param_.video_data_param().new_width();
 	const int new_length  = this->layer_param_.video_data_param().new_length();
+	const int num_segments = this->layer_param_.video_data_param().num_segments();
 	const string& source = this->layer_param_.video_data_param().source();
 	LOG(INFO) << "Opening file: " << source;
 	std:: ifstream infile(source.c_str());
@@ -51,10 +52,15 @@ void VideoDataLayer<Dtype>:: DataLayerSetUp(const vector<Blob<Dtype>*>& bottom, 
 	Datum datum;
 	const unsigned int frame_prefectch_rng_seed = caffe_rng_rand();
 	frame_prefetch_rng_.reset(new Caffe::RNG(frame_prefectch_rng_seed));
-	caffe::rng_t* frame_rng = static_cast<caffe::rng_t*>(frame_prefetch_rng_->generator());
-	int offset = (*frame_rng)() % (lines_duration_[lines_id_] - new_length + 1);
-	CHECK(ReadFlowToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offset, new_height, new_width, new_length, &datum));
-	LOG(INFO) << "LENGTH:" << new_length;
+
+	int average_duration = (int) lines_duration_[lines_id_]/num_segments;
+	vector<int> offsets;
+	for (int i = 0; i < num_segments; ++i){
+		caffe::rng_t* frame_rng = static_cast<caffe::rng_t*>(frame_prefetch_rng_->generator());
+		int offset = (*frame_rng)() % (average_duration - new_length + 1);
+		offsets.push_back(offset+i*average_duration);
+	}
+	CHECK(ReadSegmentFlowToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offsets, new_height, new_width, new_length, &datum));
 
 	const int crop_size = this->layer_param_.transform_param().crop_size();
 	const int batch_size = this->layer_param_.video_data_param().batch_size();
@@ -98,6 +104,7 @@ void VideoDataLayer<Dtype>::InternalThreadEntry(){
 	const int new_height = video_data_param.new_height();
 	const int new_width = video_data_param.new_width();
 	const int new_length = video_data_param.new_length();
+	const int num_segments = video_data_param.num_segments();
 	const int lines_size = lines_.size();
 
 	#ifndef USE_MPI
@@ -109,15 +116,18 @@ void VideoDataLayer<Dtype>::InternalThreadEntry(){
 		if (do_read){
 	#endif
 		CHECK_GT(lines_size, lines_id_);
-		int offset = 0;
-		if (this->phase_ == Caffe::TRAIN){
-			caffe::rng_t* rng = static_cast<caffe::rng_t*>(frame_prefetch_rng_->generator());
-			offset = (*rng)() % (lines_duration_[lines_id_]-new_length+1);
+		vector<int> offsets;
+		int average_duration = (int) lines_duration_[lines_id_] / num_segments;
+		for (int i = 0; i < num_segments; ++i){
+			if (this->phase_ == Caffe::TRAIN){
+				caffe::rng_t* frame_rng = static_cast<caffe::rng_t*>(frame_prefetch_rng_->generator());
+				int offset = (*frame_rng)() % (average_duration - new_length + 1);
+				offsets.push_back(offset+i*average_duration);
+			} else{
+				offsets.push_back(int((average_duration-new_length+1)/2 + i*average_duration));
+			}
 		}
-		else{
-			offset = (int) (lines_duration_[lines_id_]-new_length+1)/2;
-		}
-		if(!ReadFlowToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offset, new_height, new_width, new_length, &datum)) {
+		if(!ReadSegmentFlowToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offsets, new_height, new_width, new_length, &datum)) {
 			continue;
 		}
 		this->data_transformer_.Transform(item_id, datum, this->mean_, top_data);

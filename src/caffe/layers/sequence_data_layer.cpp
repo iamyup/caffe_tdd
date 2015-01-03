@@ -19,7 +19,7 @@ using namespace boost::filesystem;
 
 namespace caffe{
 template <typename Dtype>
-SequnenceDataLayer<Dtype>:: ~SequenceDataLayer<Dtype>(){
+SequenceDataLayer<Dtype>:: ~SequenceDataLayer<Dtype>(){
 	this->JoinPrefetchThread();
 }
 
@@ -48,6 +48,8 @@ void SequenceDataLayer<Dtype>:: DataLayerSetUp(const vector<Blob<Dtype>*>& botto
 
 	LOG(INFO) << "A total of " << lines_.size() << " videos.";
 	lines_id_ = 0;
+	const int crop_size = this->layer_param_.transform_param().crop_size();
+	const int batch_size = this->layer_param_.video_data_param().batch_size();
 
 	Datum datum;
 	const unsigned int frame_prefectch_rng_seed = caffe_rng_rand();
@@ -55,11 +57,10 @@ void SequenceDataLayer<Dtype>:: DataLayerSetUp(const vector<Blob<Dtype>*>& botto
 	int average_duration = (int) lines_duration_[lines_id_]/num_segments;
 	for (int i = 0; i< num_segments; i++){
 		caffe::rng_t* frame_rng = static_cast<caffe::rng_t*>(frame_prefetch_rng_->generator());
-		int offset = (*frame_rng)() % (average - new_length + 1);
+		int offset = (*frame_rng)() % (average_duration - new_length + 1);
 		offset = offset + average_duration * i;
 		CHECK(ReadFlowToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offset, new_height, new_width, new_length, &datum));
-		const int crop_size = this->layer_param_.transform_param().crop_size();
-		const int batch_size = this->layer_param_.video_data_param().batch_size();
+
 		if (crop_size > 0){
 			(*top)[i]->Reshape(batch_size, datum.channels(), crop_size, crop_size);
 			this->prefetch_data_.Reshape(batch_size, datum.channels(), crop_size, crop_size);
@@ -103,7 +104,7 @@ void SequenceDataLayer<Dtype>::InternalThreadEntry(){
 	const int new_height = sequence_data_param.new_height();
 	const int new_width = sequence_data_param.new_width();
 	const int new_length = sequence_data_param.new_length();
-	const int num_segments = sequenc_data_param.num_segments();
+	const int num_segments = sequence_data_param.num_segments();
 	const int lines_size = lines_.size();
 
 	#ifndef USE_MPI
@@ -142,7 +143,7 @@ void SequenceDataLayer<Dtype>::InternalThreadEntry(){
 			DLOG(INFO) << "Restarting data prefetching from start.";
 			lines_id_ = 0;
 			if(this->layer_param_.video_data_param().shuffle()){
-				ShuffleVideos();
+				ShuffleSequences();
 			}
 		}
 
@@ -150,6 +151,6 @@ void SequenceDataLayer<Dtype>::InternalThreadEntry(){
 
 }
 
-INSTANTIATE_CLASS(VideoDataLayer);
+INSTANTIATE_CLASS(SequenceDataLayer);
 }
 
