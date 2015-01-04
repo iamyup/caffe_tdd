@@ -124,14 +124,19 @@ bool ReadSegmentFlowToDatum(const string& filename, const int label,
 			sprintf(tmp,"flow_x_%04d.jpg",int(file_id+offset));
 			string filename_x = filename + "/" + tmp;
 			cv::Mat cv_img_origin_x = cv::imread(filename_x, CV_LOAD_IMAGE_GRAYSCALE);
-			if (!cv_img_origin_x.data){
-				LOG(ERROR) << "Could not load file " << filename_x;
+			sprintf(tmp,"flow_y_%04d.jpg",int(file_id+offset));
+			string filename_y = filename + "/" + tmp;
+			cv::Mat cv_img_origin_y = cv::imread(filename_y, CV_LOAD_IMAGE_GRAYSCALE);
+			if (!cv_img_origin_x.data || !cv_img_origin_y.data){
+				LOG(ERROR) << "Could not load file " << filename_x << " or " << filename_y;
 				return false;
 			}
 			if (height > 0 && width > 0){
 				cv::resize(cv_img_origin_x, cv_img_x, cv::Size(width, height));
+				cv::resize(cv_img_origin_y, cv_img_y, cv::Size(width, height));
 			}else{
 				cv_img_x = cv_img_origin_x;
+				cv_img_y = cv_img_origin_y;
 			}
 			if (file_id==1 && i==0){
 				int num_channels = 2;
@@ -148,21 +153,7 @@ bool ReadSegmentFlowToDatum(const string& filename, const int label,
 					datum_string->push_back(static_cast<char>(cv_img_x.at<uchar>(h,w)));
 				}
 			}
-		}
-		for (int file_id = 1; file_id < length+1; ++file_id){
-			sprintf(tmp,"flow_y_%04d.jpg",int(file_id+offset));
-			string filename_y = filename + "/" + tmp;
-			cv::Mat cv_img_origin_y = cv::imread(filename_y, CV_LOAD_IMAGE_GRAYSCALE);
-			if (!cv_img_origin_y.data){
-				LOG(ERROR) << "Could not load file " << filename_y;
-				return false;
-			}
-			if (height > 0 && width > 0){
-				cv::resize(cv_img_origin_y, cv_img_y, cv::Size(width, height));
-			}else{
-				cv_img_y = cv_img_origin_y;
-			}
-			for (int h = 0; h < cv_img_y.rows; ++ h){
+			for (int h = 0; h < cv_img_y.rows; ++h){
 				for (int w = 0; w < cv_img_y.cols; ++w){
 					datum_string->push_back(static_cast<char>(cv_img_y.at<uchar>(h,w)));
 				}
