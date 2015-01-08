@@ -26,7 +26,25 @@ class Filler {
   FillerParameter filler_param_;
 };  // class Filler
 
-
+template <typename Dtype>
+class PoolingFiller : public Filler<Dtype>{
+	explicit PoolingFiller(const FillerParameter& param)
+		: Filler<Dtype>(param){}
+	virtual void Fill(Blob<Dtype>* blob){
+		Dtype* data = blob->mutable_cpu_data();
+		int count = blob->count();
+		int num = blob->num();
+		int channel = blob->channels();
+		int num_segments = channel/num;
+		for (int i = 0; i < count; i++)
+			data[i] = 0;
+		for (int i = 0; i < num; ++i){
+			for (int j = 0; j < num_segments; ++j){
+				data[i*channel+j] = 1/num_segments;
+			}
+		}
+	}
+};
 /// @brief Fills a Blob with constant values @f$ x = 0 @f$.
 template <typename Dtype>
 class ConstantFiller : public Filler<Dtype> {

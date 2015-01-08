@@ -368,6 +368,7 @@ message TransformationParameter {
   optional string mean_file = 4;
   optional bool multiscale = 5 [default = false];
   optional float offset = 6 [default = 0];
+  optional bool is_flow = 7 [default = false];
 }
 
 // Message that stores parameters used by AccuracyLayer

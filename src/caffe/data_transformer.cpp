@@ -250,6 +250,7 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
   const bool mirror = param_.mirror();
   const Dtype scale = param_.scale();
   const Dtype offset = param_.offset();
+  const bool is_flow = param_.is_flow();
 
   if (mirror && crop_size == 0) {
     LOG(FATAL) << "Current implementation requires mirror and crop_size to be "
@@ -279,12 +280,17 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
                 * crop_size + (crop_size - 1 - w);
             Dtype datum_element =
                 static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
-            if (c % 2 == 1){
-            	transformed_data[top_index] =
-            	                (datum_element - mean[data_index] + offset) * scale;
+            if (is_flow){
+                if (c % 2 == 1){
+                	transformed_data[top_index] =
+                	                (datum_element - mean[data_index] + offset) * scale;
+                } else{
+                	transformed_data[top_index] =
+                	                (255-datum_element - mean[data_index] + offset) * scale;
+                }
             } else{
             	transformed_data[top_index] =
-            	                (255-datum_element - mean[data_index] + offset) * scale;
+            	                	 (datum_element - mean[data_index] + offset) * scale;
             }
           }
         }
