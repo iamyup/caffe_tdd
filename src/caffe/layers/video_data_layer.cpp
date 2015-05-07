@@ -30,6 +30,7 @@ void VideoDataLayer<Dtype>:: DataLayerSetUp(const vector<Blob<Dtype>*>& bottom, 
 	const int new_length  = this->layer_param_.video_data_param().new_length();
 	const int num_segments = this->layer_param_.video_data_param().num_segments();
 	const string& source = this->layer_param_.video_data_param().source();
+
 	LOG(INFO) << "Opening file: " << source;
 	std:: ifstream infile(source.c_str());
 	string filename;
@@ -52,7 +53,6 @@ void VideoDataLayer<Dtype>:: DataLayerSetUp(const vector<Blob<Dtype>*>& bottom, 
 	Datum datum;
 	const unsigned int frame_prefectch_rng_seed = caffe_rng_rand();
 	frame_prefetch_rng_.reset(new Caffe::RNG(frame_prefectch_rng_seed));
-
 	int average_duration = (int) lines_duration_[lines_id_]/num_segments;
 	vector<int> offsets;
 	for (int i = 0; i < num_segments; ++i){
@@ -60,8 +60,10 @@ void VideoDataLayer<Dtype>:: DataLayerSetUp(const vector<Blob<Dtype>*>& bottom, 
 		int offset = (*frame_rng)() % (average_duration - new_length + 1);
 		offsets.push_back(offset+i*average_duration);
 	}
-	CHECK(ReadSegmentFlowToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offsets, new_height, new_width, new_length, &datum));
-
+	if (this->layer_param_.video_data_param().modality() == VideoDataParameter_Modality_FLOW)
+		CHECK(ReadSegmentFlowToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offsets, new_height, new_width, new_length, &datum));
+	else
+		CHECK(ReadSegmentRGBToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offsets, new_height, new_width, new_length, &datum, true));
 	const int crop_size = this->layer_param_.transform_param().crop_size();
 	const int batch_size = this->layer_param_.video_data_param().batch_size();
 	if (crop_size > 0){
@@ -127,8 +129,15 @@ void VideoDataLayer<Dtype>::InternalThreadEntry(){
 				offsets.push_back(int((average_duration-new_length+1)/2 + i*average_duration));
 			}
 		}
-		if(!ReadSegmentFlowToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offsets, new_height, new_width, new_length, &datum)) {
-			continue;
+		// LOG(INFO)<<offsets.size()<<" "<<offsets[0]<<" "<<offsets[1];
+		if (this->layer_param_.video_data_param().modality() == VideoDataParameter_Modality_FLOW){
+			if(!ReadSegmentFlowToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offsets, new_height, new_width, new_length, &datum)) {
+				continue;
+			}
+		} else{
+			if(!ReadSegmentRGBToDatum(lines_[lines_id_].first, lines_[lines_id_].second, offsets, new_height, new_width, new_length, &datum, true)) {
+				continue;
+			}
 		}
 		this->data_transformer_.Transform(item_id, datum, this->mean_, top_data);
 		top_label[item_id] = datum.label();

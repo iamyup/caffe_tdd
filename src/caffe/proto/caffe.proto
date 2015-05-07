@@ -580,6 +580,11 @@ message VideoDataParameter{
   // DEPRECATED. See TransformationParameter. Specify if we want to randomly mirror
   // data.
   optional bool mirror = 6 [default = false];
+  enum Modality {
+    RGB = 0;
+    FLOW = 1;
+  }
+  optional Modality modality = 13 [default = FLOW];
 }
 
 message SequenceDataParameter{

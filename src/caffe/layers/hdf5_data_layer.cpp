@@ -37,6 +37,7 @@ void HDF5DataLayer<Dtype>::LoadHDF5FileData(const char* filename) {
   const int MAX_DATA_DIM = 4;
   hdf5_load_nd_dataset(
     file_id, "data",  MIN_DATA_DIM, MAX_DATA_DIM, &data_blob_);
+  LOG(INFO) << "Successully loaded ";
 
   const int MIN_LABEL_DIM = 1;
   const int MAX_LABEL_DIM = 2;

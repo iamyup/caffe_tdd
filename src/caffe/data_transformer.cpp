@@ -278,19 +278,26 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
             int data_index = (c * height + h + h_off) * width + w + w_off;
             int top_index = ((batch_item_id * channels + c) * crop_size + h)
                 * crop_size + (crop_size - 1 - w);
+            int t = (c*crop_size+h)*crop_size+crop_size-1-w;
             Dtype datum_element =
                 static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
             if (is_flow){
                 if (c % 2 == 1){
+                    // transformed_data[top_index] =
+                	                // (datum_element - mean[data_index] + offset) * scale;
                 	transformed_data[top_index] =
-                	                (datum_element - mean[data_index] + offset) * scale;
+                			        (datum_element - mean[t] + offset) * scale;
                 } else{
+                	// transformed_data[top_index] =
+                	                // (255-datum_element - mean[data_index] + offset) * scale;
                 	transformed_data[top_index] =
-                	                (255-datum_element - mean[data_index] + offset) * scale;
+                			(255-datum_element - mean[t] + offset) * scale;
                 }
             } else{
+            	// transformed_data[top_index] =
+            	                	 // (datum_element - mean[data_index] + offset) * scale;
             	transformed_data[top_index] =
-            	                	 (datum_element - mean[data_index] + offset) * scale;
+            			  (datum_element - mean[t] + offset) * scale;
             }
           }
         }
@@ -303,9 +310,12 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
             int top_index = ((batch_item_id * channels + c) * crop_size + h)
                 * crop_size + w;
             int data_index = (c * height + h + h_off) * width + w + w_off;
+            int t = (c*crop_size+h)*crop_size+w;
             Dtype datum_element = static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
-			transformed_data[top_index] =
-						(datum_element - mean[data_index] + offset) * scale;
+			// transformed_data[top_index] =
+						// (datum_element - mean[data_index] + offset) * scale;
+            transformed_data[top_index] =
+            		(datum_element - mean[t] + offset) * scale;
           }
         }
       }

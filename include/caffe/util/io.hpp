@@ -98,6 +98,9 @@ bool ReadFlowToDatum(const string& filename, const int label,
 bool ReadSegmentFlowToDatum(const string& filename, const int label,
     const vector<int> offsets, const int height, const int width, const int length, Datum* datum);
 
+bool ReadSegmentRGBToDatum(const string& filename, const int label,
+    const vector<int> offsets, const int height, const int width, const int length, Datum* datum, bool is_color);
+
 bool ReadFlowToDatum_copy(const string& filename, const int label,
     const int offset, const int height, const int width, const int length, Datum* datum);
 

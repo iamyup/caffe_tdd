@@ -37,13 +37,17 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     BlobProto blob_proto;
     ReadProtoFromBinaryFileOrDie(mean_file.c_str(), &blob_proto);
     data_mean_.FromProto(blob_proto);
+    LOG(INFO)<< data_mean_.num() << " " << data_mean_.channels() << "  "
+    << data_mean_.height()<< " " << data_mean_.width();
     CHECK_GE(data_mean_.num(), 1);
     CHECK_GE(data_mean_.channels(), datum_channels_);
-    CHECK_GE(data_mean_.height(), datum_height_);
-    CHECK_GE(data_mean_.width(), datum_width_);
+    CHECK_GE(data_mean_.height(),transform_param_.crop_size());
+    CHECK_GE(data_mean_.width(),transform_param_.crop_size());
+    // CHECK_GE(data_mean_.height(), datum_height_);
+    // CHECK_GE(data_mean_.width(), datum_width_);
   } else {
     // Simply initialize an all-empty mean.
-    data_mean_.Reshape(1, datum_channels_, datum_height_, datum_width_);
+    data_mean_.Reshape(1, datum_channels_, transform_param_.crop_size(), transform_param_.crop_size());
     Dtype* mean_prt = data_mean_.mutable_cpu_data();
     for (int i = 0; i < datum_channels_*datum_height_*datum_width_; i++)
     	mean_prt[i] = 128;
