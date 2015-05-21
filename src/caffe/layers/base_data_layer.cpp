@@ -49,8 +49,22 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     // Simply initialize an all-empty mean.
     data_mean_.Reshape(1, datum_channels_, transform_param_.crop_size(), transform_param_.crop_size());
     Dtype* mean_prt = data_mean_.mutable_cpu_data();
-    for (int i = 0; i < datum_channels_*transform_param_.crop_size()*transform_param_.crop_size(); i++)
+    LOG(INFO) << transform_param_.is_flow();
+    if (transform_param_.is_flow()==false){
+      for (int i = 0; i<  transform_param_.crop_size()*transform_param_.crop_size(); i++)
+        mean_prt[i] = 104;
+      for (int i = 0; i<  transform_param_.crop_size()*transform_param_.crop_size(); i++)
+        mean_prt[i+transform_param_.crop_size()*transform_param_.crop_size()] = 117;
+      for (int i = 0; i<  transform_param_.crop_size()*transform_param_.crop_size(); i++)
+        mean_prt[i+2*transform_param_.crop_size()*transform_param_.crop_size()] = 123;
+
+      LOG(INFO) << mean_prt[0] <<" "<< mean_prt[224*224] << " "<<mean_prt[224*224*2];
+
+    } else{
+      for (int i = 0; i < datum_channels_*transform_param_.crop_size()*transform_param_.crop_size(); i++)
     	mean_prt[i] = 128;
+    LOG(INFO) << "Flow";
+  }
   }
   mean_ = data_mean_.cpu_data();
   data_transformer_.InitRand();
