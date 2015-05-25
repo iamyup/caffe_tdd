@@ -229,6 +229,129 @@ static mxArray* do_get_weights() {
   return mx_layers;
 }
 
+
+static mxArray* do_get_top_feature_maps() {
+	const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
+	const vector<vector<Blob<float>*> >& top_vecs = net_->top_vecs();
+	const vector<string>& layer_names = net_->layer_names();
+
+	  // Step 1: count the number of layers with weights
+	  int num_layers = 0;
+	  int num_feature_maps = 0;
+	  int copied_feature_maps = 0;
+	  {
+	    string prev_layer_name = "";
+	    for (unsigned int i = layers.size()-3; i < layers.size(); i=i+2) {
+	      vector<shared_ptr<Blob<float> > >& layer_blobs = layers[i]->blobs();
+	      const vector<Blob<float>*>& top_vec = top_vecs[i];
+
+//	      if (layer_blobs.size() == 0) {
+//	        continue;
+//	      }
+//
+	      if (layer_names[i] != prev_layer_name) {
+	        prev_layer_name = layer_names[i];
+	        num_layers++;
+	        num_feature_maps += top_vec.size();
+	      }
+	    }
+	  }
+
+	  // Step 2: prepare output array of structures
+	  mxArray* mx_layers;
+	  {
+	    const mwSize dims[2] = {num_layers, 1};
+	    const char* fnames[3] = {"weights", "layer_names", "feature_maps"};
+	    mx_layers = mxCreateStructArray(2, dims, 3, fnames);
+	  }
+
+	  // Step 3: copy weights into output
+
+	  {
+
+	    string prev_layer_name = "";
+	    int mx_layer_index = 0;
+	    for (unsigned int i = layers.size()-3; i < layers.size(); i=i+2) {
+	      vector<shared_ptr<Blob<float> > >& layer_blobs = layers[i]->blobs();
+	      const vector<Blob<float>*>& top_vec = top_vecs[i];
+//	      if (layer_blobs.size() == 0) {
+//	        continue;
+//	      }
+
+	      mxArray* mx_layer_cells = NULL;
+	      mxArray* mx_feature_map_cells = NULL;
+	      if (layer_names[i] != prev_layer_name) {
+	        prev_layer_name = layer_names[i];
+	        const mwSize dims[2] = {static_cast<mwSize>(layer_blobs.size()), 1};
+	        const mwSize fdims[2] = {static_cast<mwSize>(top_vec.size()), 1};
+	        mx_layer_cells = mxCreateCellArray(2, dims);
+	        mx_feature_map_cells = mxCreateCellArray(2, fdims);
+	        mxSetField(mx_layers, mx_layer_index, "weights", mx_layer_cells);
+	        mxSetField(mx_layers, mx_layer_index, "feature_maps", mx_feature_map_cells);
+	        mxSetField(mx_layers, mx_layer_index, "layer_names",
+	            mxCreateString(layer_names[i].c_str()));
+	        mx_layer_index++;
+	      }
+
+	      for (unsigned int j = 0; j < layer_blobs.size(); ++j) {
+	        // internally data is stored as (width, height, channels, num)
+	        // where width is the fastest dimension
+	        mwSize dims[4] = {layer_blobs[j]->width(), layer_blobs[j]->height(),
+	            layer_blobs[j]->channels(), layer_blobs[j]->num()};
+
+	        mxArray* mx_weights =
+	          mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
+	        mxSetCell(mx_layer_cells, j, mx_weights);
+	        float* weights_ptr = reinterpret_cast<float*>(mxGetPr(mx_weights));
+
+	        switch (Caffe::mode()) {
+	        case Caffe::CPU:
+	          caffe_copy(layer_blobs[j]->count(), layer_blobs[j]->cpu_data(),
+	              weights_ptr);
+	          break;
+	        case Caffe::GPU:
+	          caffe_copy(layer_blobs[j]->count(), layer_blobs[j]->gpu_data(),
+	              weights_ptr);
+	          break;
+	        default:
+	          LOG(FATAL) << "Unknown caffe mode: " << Caffe::mode();
+	        }
+	      }
+			for (unsigned int j = 0; j < top_vec.size(); ++j) {
+				// internally data is stored as (width, height, channels, num)
+				// where width is the fastest dimension
+				mwSize dims[4] = { top_vec[j]->width(),
+						top_vec[j]->height(), top_vec[j]->channels(),
+						top_vec[j]->num() };
+
+				mxArray* mx_feature_map = mxCreateNumericArray(4, dims,
+						mxSINGLE_CLASS, mxREAL);
+				mxSetCell(mx_feature_map_cells, j, mx_feature_map);
+				float* feature_map_ptr = reinterpret_cast<float*>(mxGetPr(
+						mx_feature_map));
+
+				switch (Caffe::mode()) {
+				case Caffe::CPU:
+					caffe_copy(top_vec[j]->count(),
+							top_vec[j]->cpu_data(), feature_map_ptr);
+					break;
+				case Caffe::GPU:
+					caffe_copy(top_vec[j]->count(),
+							top_vec[j]->gpu_data(), feature_map_ptr);
+					break;
+				default:
+					LOG(FATAL)<< "Unknown caffe mode: " << Caffe::mode();
+				}
+				copied_feature_maps ++;
+			}
+
+	    }
+
+	  }
+	  CHECK_EQ(copied_feature_maps, num_feature_maps);
+	  return mx_layers;
+}
+
 static mxArray* do_get_feature_maps() {
 	const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
 	const vector<vector<Blob<float>*> >& top_vecs = net_->top_vecs();
@@ -357,6 +480,10 @@ static void get_weights(MEX_ARGS) {
 
 static void get_feature_maps(MEX_ARGS){
   plhs[0] = do_get_feature_maps();
+}
+
+static void get_top_feature_maps(MEX_ARGS){
+  plhs[0] = do_get_top_feature_maps();
 }
 
 static void set_mode_cpu(MEX_ARGS) {
@@ -507,6 +634,7 @@ static handler_registry handlers[] = {
   { "read_mean",          read_mean       },
   // added by alex
   { "get_feature_maps",   get_feature_maps},
+  { "get_top_feature_maps",   get_feature_maps},
   // The end.
   { "END",                NULL            },
 };
