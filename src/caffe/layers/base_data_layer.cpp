@@ -58,12 +58,14 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       for (int i = 0; i<  transform_param_.crop_size()*transform_param_.crop_size(); i++)
         mean_prt[i+2*transform_param_.crop_size()*transform_param_.crop_size()] = 123;
 
-      LOG(INFO) << mean_prt[0] <<" "<< mean_prt[224*224] << " "<<mean_prt[224*224*2];
+      LOG(INFO) << mean_prt[0] <<" "<< mean_prt[transform_param_.crop_size()*transform_param_.crop_size()] << " "
+      <<mean_prt[transform_param_.crop_size()*transform_param_.crop_size()*2];
 
     } else{
       for (int i = 0; i < datum_channels_*transform_param_.crop_size()*transform_param_.crop_size(); i++)
-    	mean_prt[i] = 128;
-    LOG(INFO) << "Flow";
+        mean_prt[i] = 128;
+      LOG(INFO) << mean_prt[0] <<" "<< mean_prt[transform_param_.crop_size()*transform_param_.crop_size()] << " "
+      <<mean_prt[transform_param_.crop_size()*transform_param_.crop_size()*2];
   }
   }
   mean_ = data_mean_.cpu_data();

@@ -257,47 +257,54 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
                << "set at the same time.";
   }
 
+  Mat cropped_resize;
+
   if (crop_size) {
     CHECK(data.size()) << "Image cropping only support uint8 data";
-    int h_off, w_off;
+    int h_off, w_off, roi_w, roi_h;
     // We only do random crop when we do training.
     if (phase_ == Caffe::TRAIN) {
-      h_off = Rand() % (height - crop_size);
-      w_off = Rand() % (width - crop_size);
+      int cr = Rand() % 5;
+      int sc = Rand() % 9;
+      roi_w = widths_[sc];
+      roi_h = heights_[sc];
+      // crop 4 courners + center
+      int w[5], h[5];
+      FillInOffsets(w, h, width, height, roi_w, roi_h);
+      w_off = w[cr];
+      h_off = h[cr];
     } else {
         h_off = (height - crop_size) / 2;
         w_off = (width - crop_size) / 2;
-        // h_off = Rand() % (height - crop_size);
-        // w_off = Rand() % (width - crop_size);
+        roi_w = crop_size;
+        roi_h = crop_size;
     }
     if (mirror && Rand() % 2) {
       // Copy mirrored version
       for (int c = 0; c < channels; ++c) {
+        cv::Mat M(height,width,CV_8UC1);
+        for (int h =0; h < height; ++h ){
+          for (int w=0; w < width; ++w){
+            int data_index = (c * height + h) * width + w;
+            M.at<uchar>(h,w) = static_cast<uint8_t>(data[data_index]);
+          }
+        }
+        cv::Mat cropped (M, Rect(w_off, h_off, roi_w, roi_h));
+        resize(cropped,cropped_resize,Size(crop_size,crop_size));
+
         for (int h = 0; h < crop_size; ++h) {
           for (int w = 0; w < crop_size; ++w) {
-            int data_index = (c * height + h + h_off) * width + w + w_off;
             int top_index = ((batch_item_id * channels + c) * crop_size + h)
                 * crop_size + (crop_size - 1 - w);
-            int t = (c*crop_size+h)*crop_size+crop_size-1-w;
-            Dtype datum_element =
-                static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
-            if (is_flow){
-                if (c % 2 == 1){
-                    // transformed_data[top_index] =
-                	                // (datum_element - mean[data_index] + offset) * scale;
-                	transformed_data[top_index] =
-                			        (datum_element - mean[t] + offset) * scale;
-                } else{
-                	// transformed_data[top_index] =
-                	                // (255-datum_element - mean[data_index] + offset) * scale;
-                	transformed_data[top_index] =
-                			(255-datum_element - mean[t] + offset) * scale;
-                }
+            int t = (c*crop_size+h)*crop_size+w;
+            Dtype datum_element = 
+                static_cast<Dtype>(static_cast<uint8_t>(cropped_resize.at<uchar>(h,w)));
+            if (is_flow && c%2 == 0){
+              transformed_data[top_index] = 
+                  (255-datum_element - mean[t] + offset) * scale;
             } else{
-            	// transformed_data[top_index] =
-            	                	 // (datum_element - mean[data_index] + offset) * scale;
-            	transformed_data[top_index] =
-            			  (datum_element - mean[t] + offset) * scale;
+              transformed_data[top_index] = 
+                  (datum_element - mean[t] + offset) * scale;
             }
           }
         }
@@ -305,15 +312,23 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
     } else {
       // Normal copy
       for (int c = 0; c < channels; ++c) {
+        cv::Mat M(height,width,CV_8UC1);
+        for (int h =0; h < height; ++h ){
+          for (int w=0; w < width; ++w){
+            int data_index = (c * height + h) * width + w;
+            M.at<uchar>(h,w) = static_cast<uint8_t>(data[data_index]);
+          }
+        }
+        cv::Mat cropped (M, Rect(w_off, h_off, roi_w, roi_h));
+        resize(cropped,cropped_resize,Size(crop_size,crop_size));
+        
         for (int h = 0; h < crop_size; ++h) {
           for (int w = 0; w < crop_size; ++w) {
             int top_index = ((batch_item_id * channels + c) * crop_size + h)
                 * crop_size + w;
-            int data_index = (c * height + h + h_off) * width + w + w_off;
             int t = (c*crop_size+h)*crop_size+w;
-            Dtype datum_element = static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
-			// transformed_data[top_index] =
-						// (datum_element - mean[data_index] + offset) * scale;
+            Dtype datum_element = 
+                static_cast<Dtype>(static_cast<uint8_t>(cropped_resize.at<uchar>(h,w)));
             transformed_data[top_index] =
             		(datum_element - mean[t] + offset) * scale;
           }
