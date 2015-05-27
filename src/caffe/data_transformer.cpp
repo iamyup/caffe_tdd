@@ -10,10 +10,10 @@
 namespace caffe {
 
 template<typename Dtype>
-const int DataTransformer<Dtype>::widths_[] = {256, 256, 192, 224, 224, 168, 168, 168, 126};
+const int DataTransformer<Dtype>::widths_[] = {256, 224, 256, 192, 224, 168, 168, 168, 126};
 
 template<typename Dtype>
-const int DataTransformer<Dtype>::heights_[]  = {256, 192, 256, 224, 168, 224, 168, 126, 168};
+const int DataTransformer<Dtype>::heights_[]  = {256, 224,192, 256, 168, 224, 168, 126, 168};
 
 template<typename Dtype>
 void DataTransformer<Dtype>::TransformSingle(const int batch_item_id,
@@ -265,7 +265,13 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
     // We only do random crop when we do training.
     if (phase_ == Caffe::TRAIN) {
       int cr = Rand() % 5;
-      int sc = Rand() % 9;
+      int sc;
+      if (is_flow==true) {
+        sc = Rand() % 2;
+      }else{
+        sc = Rand() % 9;
+      }
+      
       roi_w = widths_[sc];
       roi_h = heights_[sc];
       // crop 4 courners + center
