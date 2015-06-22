@@ -10,10 +10,10 @@
 namespace caffe {
 
 template<typename Dtype>
-const int DataTransformer<Dtype>::widths_[] = {256, 224, 256, 192, 224, 168, 168, 168, 126};
+const int DataTransformer<Dtype>::widths_[] = {256, 224, 256, 224, 256, 192, 224, 168, 168, 168, 126};
 
 template<typename Dtype>
-const int DataTransformer<Dtype>::heights_[]  = {256, 224,192, 256, 168, 224, 168, 126, 168};
+const int DataTransformer<Dtype>::heights_[]  = {256, 224, 224, 256, 192, 256, 168, 224, 168, 126, 168};
 
 template<typename Dtype>
 void DataTransformer<Dtype>::TransformSingle(const int batch_item_id,
@@ -267,9 +267,9 @@ void DataTransformer<Dtype>::Transform(const int batch_item_id,
       int cr = Rand() % 5;
       int sc;
       if (is_flow==true) {
-        sc = Rand() % 2;
+        sc = Rand() % 4;
       }else{
-        sc = Rand() % 9;
+        sc = Rand() % 11;
       }
       
       roi_w = widths_[sc];

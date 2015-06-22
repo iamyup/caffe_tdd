@@ -63,6 +63,7 @@ def select_log_part(raw_logs, part_identifiers=[('Testing','Testing', 4, 2), ('T
                             loss.append(float(floating_numbers[line_index+i][2:]))
 
                     if 'accuracy' in line  or 'accuracy5' in line:
+                    #if 'top-1' in line  or 'top-5' in line:
                         if len(acc) <= acc_num:
                             acc.append(float(floating_numbers[line_index+i][2:]))
 
