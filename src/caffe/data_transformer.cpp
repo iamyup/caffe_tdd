@@ -9,6 +9,8 @@
 
 namespace caffe {
 
+extern int64_t cluster_seedgen(void);
+
 template<typename Dtype>
 const int DataTransformer<Dtype>::widths_[] = {256, 224, 256, 224, 192, 192, 224, 240, 256, 240, 256, 192, 224, 168, 168, 168, 126};
 
@@ -363,7 +365,7 @@ template <typename Dtype>
 void DataTransformer<Dtype>::InitRand() {
   const bool needs_rand =  (param_.mirror() || param_.crop_size());
   if (needs_rand) {
-    const unsigned int rng_seed = caffe_rng_rand();
+    const unsigned int rng_seed = cluster_seedgen();
     rng_.reset(new Caffe::RNG(rng_seed));
   } else {
     rng_.reset();
