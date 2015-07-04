@@ -168,6 +168,12 @@ template <typename Dtype>
 void Solver<Dtype>::Solve(const char* resume_file) {
   Caffe::set_phase(Caffe::TRAIN);
   LOG(INFO) << "Solving " << net_->name();
+#ifdef USE_MPI
+  //Sync model initialization
+ for (int i = 0; i < this->net_->params().size(); ++i) {
+	MPI_Bcast(this->net_->params()[i]->mutable_cpu_data(), this->net_->params()[i]->count(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+ }
+#endif
   PreSolve();
 #ifdef USE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank_);
